@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  role            String    @default("EMPLOYEE")
+  isEmailVerified Boolean   @default(false)
+  employee        Employee?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Employee {
+  id            String            @id @default(cuid())
+  employeeCode  String            @unique
+  userId        String            @unique
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  phone         String?
+  address       String?
+  avatarUrl     String?
+  dateOfBirth   DateTime?
+  joinedOn      DateTime
+  status        String            @default("ACTIVE")
+  departmentId  String?
+  designationId String?
+  department    Department?       @relation(fields: [departmentId], references: [id])
+  designation   Designation?      @relation(fields: [designationId], references: [id])
+  attendanceRecords AttendanceRecord[]
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+  payrollStructure PayrollStructure?
+  salarySlips   SalarySlip[]
+  documents     EmployeeDocument[]
+  auditLogs     AuditLog[]        @relation("AuditActor")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model Department {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  employees Employee[]
+}
+
+model Designation {
+  id        String     @id @default(cuid())
+  title     String     @unique
+  employees Employee[]
+}
+
+model AttendanceRecord {
+  id          String           @id @default(cuid())
+  employeeId  String
+  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  workDate    DateTime
+  checkInAt   DateTime?
+  checkOutAt  DateTime?
+  status      String           @default("PRESENT")
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([employeeId, workDate])
+  @@index([workDate])
+}
+
+model LeaveRequest {
+  id              String      @id @default(cuid())
+  employeeId      String
+  employee        Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType       String
+  startsOn        DateTime
+  endsOn          DateTime
+  remarks         String?
+  status          String      @default("PENDING")
+  reviewerId      String?
+  reviewerName    String?
+  reviewerComment String?
+  reviewedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([status])
+  @@index([startsOn, endsOn])
+}
+
+model LeaveBalance {
+  id         String    @id @default(cuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType  String
+  totalDays  Int
+  usedDays   Int       @default(0)
+
+  @@unique([employeeId, leaveType])
+}
+
+model PayrollStructure {
+  id            String   @id @default(cuid())
+  employeeId    String   @unique
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  monthlyWage   Decimal  @default(50000)
+  workingDaysPerWeek Int @default(5)
+  breakTimeHours Decimal @default(1)
+  pfRate        Decimal  @default(12)
+  professionalTax Decimal @default(200)
+  basicPay      Decimal
+  hra           Decimal
+  allowances    Decimal
+  deductions    Decimal
+  effectiveFrom DateTime
+  updatedAt     DateTime @updatedAt
+}
+
+model SalarySlip {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month       Int
+  year        Int
+  grossPay    Decimal
+  netPay      Decimal
+  generatedAt DateTime @default(now())
+
+  @@unique([employeeId, month, year])
+}
+
+model EmployeeDocument {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type        String
+  name        String
+  fileUrl     String
+  uploadedAt  DateTime @default(now())
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  actorId     String?
+  actor       Employee? @relation("AuditActor", fields: [actorId], references: [id])
+  action      String
+  entityType  String
+  entityId    String
+  metadata    String?
+  createdAt   DateTime  @default(now())
+
+  @@index([entityType, entityId])
+}
