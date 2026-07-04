@@ -145,3 +145,6 @@ Admins can:
 ## Project Tagline
 
 **Every workday, perfectly aligned.**
+
+## Run the project with the command 'npm run dev'
+
