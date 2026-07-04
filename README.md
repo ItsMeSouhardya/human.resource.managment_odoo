@@ -146,5 +146,5 @@ Admins can:
 
 **Every workday, perfectly aligned.**
 
-## Run the project with the command 'npm run dev'
+### Run the project with the command 'npm run dev'
 
