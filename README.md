@@ -1,0 +1,1 @@
+# human.resource.managment_odoo
